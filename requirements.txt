@@ -1,0 +1,6 @@
+google-genai
+pyyaml
+requests
+python-dotenv
+pytest
+pytest-mock
