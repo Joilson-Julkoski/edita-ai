@@ -1,3 +1,28 @@
+# Git Workflow
+
+follow GitHub Flow:
+- `main` is the protected branch — never commit directly to it
+- create branches from `main` using conventional commit prefixes: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`
+- open a Pull Request to merge into `main`
+- PRs must pass CI (lint + tests) before merging
+
+## Conventional Commits
+
+commit messages must follow the format: `<type>(<scope>): <description>`
+types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`
+example: `feat(editor): add timeline validation`
+
+## CI
+
+GitHub Actions runs on every push and PR to `main`:
+1. **lint** — `ruff check .` and `ruff format --check .`
+2. **test** — `pytest` (runs only after lint passes)
+
+to run locally before pushing:
+```
+ruff check . && ruff format --check . && pytest
+```
+
 # Introduction
 
 this project is a simple video editor that recive a audio file, transcrive this, format into a edit file, that is a .yml, interprete this and generate a .mp4 file.
