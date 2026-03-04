@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from main import transcribe, edit, search, interpret, run
+from main import transcribe, edit, search, interpret, run, _wrap_text, MAX_CHARS_PER_LINE
 
 
 def test_transcribe_returns_transcript_text(tmp_path):
@@ -198,6 +198,43 @@ def test_interpret_raises_on_ffmpeg_error(tmp_path):
         mock_run.return_value = MagicMock(returncode=1, stderr="ffmpeg error")
         with pytest.raises(RuntimeError, match="ffmpeg"):
             interpret(str(audio_file), FAKE_EDIT_CONFIG, {}, output_path=str(tmp_path / "out.mp4"))
+
+
+def test_wrap_text_short_text_unchanged():
+    short = "Hello world"
+    assert _wrap_text(short) == short
+
+
+def test_wrap_text_long_text_gets_newline():
+    long_text = "A" * (MAX_CHARS_PER_LINE + 10)
+    result = _wrap_text(long_text)
+    assert r"\n" in result
+
+
+def test_wrap_text_splits_at_word_boundary():
+    text = "word " * 20  # many words, clearly over limit
+    result = _wrap_text(text)
+    lines = result.split(r"\n")
+    for line in lines:
+        assert len(line) <= MAX_CHARS_PER_LINE
+
+
+def test_interpret_wraps_long_text_in_ffmpeg_cmd(tmp_path):
+    audio_file = tmp_path / "audio.mp3"
+    audio_file.write_bytes(b"fake audio")
+    long_text = "word " * 20
+    config = {
+        "timeline": [
+            {"start": "00:00:01", "end": "00:00:05", "type": "text", "content": long_text, "position": "center"},
+        ]
+    }
+
+    with patch("main.subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(returncode=0)
+        interpret(str(audio_file), config, {}, output_path=str(tmp_path / "out.mp4"))
+
+    cmd = " ".join(mock_run.call_args[0][0])
+    assert r"\n" in cmd
 
 
 def test_run_pipeline(tmp_path):

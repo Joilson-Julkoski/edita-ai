@@ -1,5 +1,6 @@
 import os
 import subprocess
+import textwrap
 import requests
 import yaml
 from dotenv import load_dotenv
@@ -47,6 +48,14 @@ def search(edit_config: dict) -> dict:
     return {}
 
 
+MAX_CHARS_PER_LINE = 40
+
+
+def _wrap_text(text: str) -> str:
+    lines = textwrap.wrap(text, MAX_CHARS_PER_LINE)
+    return r"\n".join(lines) if lines else text
+
+
 def _time_to_seconds(t: str) -> float:
     h, m, s = t.split(":")
     return int(h) * 3600 + int(m) * 60 + float(s)
@@ -67,7 +76,7 @@ def interpret(audio_path: str, edit_config: dict, sources: dict, output_path: st
         start = _time_to_seconds(item["start"])
         end = _time_to_seconds(item["end"])
         x = _position_to_x(item["position"])
-        content = item["content"].replace("'", "\\'")
+        content = _wrap_text(item["content"]).replace("'", "\\'")
         filters.append(
             f"drawtext=text='{content}':x={x}:y=(h-text_h)/2"
             f":fontsize=48:fontcolor=white:enable='between(t,{start},{end})'"
